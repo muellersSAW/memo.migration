@@ -1,0 +1,66 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:transmogrifier="http://namespaces.plone.org/transmogrifier"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    i18n_domain="collective.transmogrifier">
+
+  <include package="collective.transmogrifier"/>
+  <include package="collective.transmogrifier" file="meta.zcml"/>
+
+  <transmogrifier:registerConfig
+      name="memo_import_content"
+      title="memo.migration (import)"
+      description="This pipeline imports content into a Plone site"
+      configuration="import_content.cfg"
+      />
+
+  <genericsetup:registerProfile
+      name="import_content"
+      title="memo.migration (import)"
+      directory="../profiles/import_content"
+      description="Content import step for memo"
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      />
+
+  <transmogrifier:registerConfig
+      name="memo_migration_base"
+      title="base configuration for memo"
+      description="This pipeline imports content into a Plone site"
+      configuration="configs/base.cfg"
+      />
+  <transmogrifier:registerConfig
+      name="memo_migration_manuscript"
+      title="configuration for memo manuscripts"
+      description="This pipeline imports content into a Plone site"
+      configuration="configs/manuscript.cfg"
+      />
+
+  <transmogrifier:registerConfig
+      name="memo_migration_author"
+      title="configuration for memo authors"
+      description="This pipeline imports content into a Plone site"
+      configuration="configs/authors.cfg"
+      />
+
+  <transmogrifier:registerConfig
+      name="memo_migration_libs"
+      title="configuration for memo libraries"
+      description="This pipeline imports content into a Plone site"
+      configuration="configs/libraries.cfg"
+      />
+
+  <transmogrifier:registerConfig
+      name="memo_migration_works"
+      title="configuration for memo works"
+      description="This pipeline imports content into a Plone site"
+      configuration="configs/work.cfg"
+      />
+
+    <!--<utility
+        component=".blueprints.Example"
+        name="memo.example"/>-->
+    <utility
+      component=".blueprints.JSONSourceMemo"
+      name="ploneconf.jsonsource"/>
+
+</configure>

@@ -1,0 +1,51 @@
+<configure
+    xmlns="http://namespaces.zope.org/zope"
+    xmlns:five="http://namespaces.zope.org/five"
+    xmlns:genericsetup="http://namespaces.zope.org/genericsetup"
+    i18n_domain="memo.migration">
+
+  <!-- Set up z3c.autoinlcude to scan dependencies and plugins of this package -->
+  <includePlugins package="." />
+  <include package=".import" />
+
+  <five:registerPackage package="." initialize=".initialize" />
+
+  <genericsetup:registerProfile
+      name="default"
+      title="memo.migration (default)"
+      directory="profiles/default"
+      description="Installation profile for memo.migration"
+      provides="Products.GenericSetup.interfaces.EXTENSION"
+      />
+
+  <genericsetup:upgradeStep
+      title="memo.run_pre_migration"
+      description="Run before migration"
+      source="0001"
+      destination="0002"
+      handler="memo.migration.upgrades.run_pre_migration"
+      sortkey="1"
+      profile="memo.migration:default"
+      />
+
+  <genericsetup:upgradeStep
+      title="memo.run_migration"
+      description="Run the migration"
+      source="0002"
+      destination="0003"
+      handler="memo.migration.upgrades.run_migration"
+      sortkey="1"
+      profile="memo.migration:default"
+      />
+
+  <genericsetup:upgradeStep
+      title="memo.run_post_migration"
+      description="Run after migration"
+      source="0003"
+      destination="0004"
+      handler="memo.migration.upgrades.run_post_migration"
+      sortkey="1"
+      profile="memo.migration:default"
+      />
+
+</configure>
