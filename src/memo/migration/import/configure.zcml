@@ -23,6 +23,13 @@
       />
 
   <transmogrifier:registerConfig
+      name="memo_migration_preparation"
+      title="configuration for preparation of the memo project"
+      description="This pipeline imports content into a Plone site"
+      configuration="configs/prepare.cfg"
+      />
+
+  <transmogrifier:registerConfig
       name="memo_migration_base"
       title="base configuration for memo"
       description="This pipeline imports content into a Plone site"
@@ -56,11 +63,31 @@
       configuration="configs/work.cfg"
       />
 
+    <transmogrifier:registerConfig
+      name="memo_migration_test"
+      title="test"
+      description="This pipeline imports content into a Plone site"
+      configuration="configs/test.cfg"
+      />     
+    <transmogrifier:registerConfig
+      name="memo_migration_test2"
+      title="test"
+      description="This pipeline imports content into a Plone site"
+      configuration="configs/test2.cfg"
+      />    
+
     <!--<utility
         component=".blueprints.Example"
         name="memo.example"/>-->
     <utility
       component=".blueprints.JSONSourceMemo"
       name="ploneconf.jsonsource"/>
+
+    <utility
+      component=".blueprints.ReferenceUpdater"
+      name="ploneconf.referenceupdater"/> 
+      <utility
+      component=".blueprints.InitStructureSource"
+      name="ploneconf.initsource"/>
 
 </configure>
