@@ -44,8 +44,8 @@ setup(
         'Products.GenericSetup>=1.8.2',
         'setuptools',
         'z3c.jbot',
-        'collective.jsonmigrator',
         'transmogrify.dexterity',
+        # 'collective.jsonmigrator',
     ],
     extras_require={
         'test': [

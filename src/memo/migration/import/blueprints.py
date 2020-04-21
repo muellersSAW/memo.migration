@@ -74,7 +74,6 @@ class Example(object):
 class JSONSourceMemo(object):
     """
     """
-
     def __init__(self, transmogrifier, name, options, previous):
         self.transmogrifier = transmogrifier
         self.name = name
@@ -97,13 +96,12 @@ class JSONSourceMemo(object):
         with open(os.path.join(self.path, "upgrade_memo.json"), "r") as read_file:
           data = json.load(read_file)
 
-       
-
         for table in data:
           if table['type'] == 'table' and table['name'] in self.tableRestricts:
             print(table['name'])
             for item in table['data']:
               yield item
+
 
 @provider(ISectionBlueprint)
 @implementer(ISection)
@@ -126,6 +124,21 @@ class InitStructureSource(object):
         for listitem in self.initStructure:
             yield listitem
 
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class DictSource(object):
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.previous = previous
+        self.dictionary = options['dictionary']
+        
+
+    def __iter__(self):
+        for item in self.previous:
+            yield item
+
+        for listitem in self.dictionary:
+            yield listitem
 
 @provider(ISectionBlueprint)
 @implementer(ISection)
@@ -208,3 +221,50 @@ class ReferenceUpdater(object):
             # unless you don't want it imported, or want
             # to bail on the rest of the pipeline
             yield item
+
+
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class SubtableLoader(object):
+    """
+    """
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.transmogrifier = transmogrifier
+        self.name = name
+        self.options = options
+        self.previous = previous
+        self.context = transmogrifier.context
+        self.tableRestricts = options['tables']
+        self.linkinField = options['linkinField']
+        self.targetField = options['targetField']
+        self.valueField = options['valueField']
+        self.path = resolvePackageReferenceOrFile(options['path'])
+        if self.path is None or not os.path.isdir(self.path):
+            raise Exception('Path (' + str(self.path) + ') does not exists.')
+
+
+    def __iter__(self):
+        for item in self.previous:
+            
+            if self.linkinField not in item:
+                yield item
+                continue
+
+            with open(os.path.join(self.path, "upgrade_memo.json"), "r") as read_file:
+                data = json.load(read_file)
+
+            for table in data:
+                if table['type'] == 'table' and table['name'] in self.tableRestricts:
+                    l = []
+                    for subitem in table['data']:
+                        if self.linkinField in subitem:
+                            if subitem[self.linkinField] == item[self.linkinField]:
+                               l.append(subitem[self.valueField])
+                    if l:
+                        item[self.targetField] = l
+
+
+                     
+                  
+            yield item            

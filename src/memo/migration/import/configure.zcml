@@ -86,8 +86,17 @@
     <utility
       component=".blueprints.ReferenceUpdater"
       name="ploneconf.referenceupdater"/> 
-      <utility
+
+    <utility
       component=".blueprints.InitStructureSource"
-      name="ploneconf.initsource"/>
+      name="ploneconf.initsource"/>   
+
+    <utility
+      component=".blueprints.DictSource"
+      name="ploneconf.dictsource"/>
+
+    <utility
+      component=".blueprints.SubtableLoader"
+      name="ploneconf.subtable"/>  
 
 </configure>
