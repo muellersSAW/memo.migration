@@ -30,6 +30,13 @@
       />
 
   <transmogrifier:registerConfig
+      name="memo_migration_users"
+      title="configuration for adding users to the memo project"
+      description="This pipeline imports users into a Plone site"
+      configuration="configs/users.cfg"
+      />   
+
+  <transmogrifier:registerConfig
       name="memo_migration_base"
       title="base configuration for memo"
       description="This pipeline imports content into a Plone site"
@@ -97,6 +104,10 @@
 
     <utility
       component=".blueprints.SubtableLoader"
-      name="ploneconf.subtable"/>  
+      name="ploneconf.subtable"/> 
+
+ <utility
+      component=".blueprints.UserCreator"
+      name="ploneconf.usercreator"/>  
 
 </configure>

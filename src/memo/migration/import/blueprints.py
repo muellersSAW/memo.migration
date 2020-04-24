@@ -20,7 +20,7 @@ from zope.lifecycleevent import ObjectModifiedEvent
 
 from plone.app.uuid.utils import uuidToObject
 
-
+import transaction
 import logging
 
 
@@ -237,6 +237,7 @@ class SubtableLoader(object):
         self.context = transmogrifier.context
         self.tableRestricts = options['tables']
         self.linkinField = options['linkinField']
+        self.linkinFieldSub = options['linkinFieldSub'] if 'linkinFieldSub' in options else options['linkinField']
         self.targetField = options['targetField']
         self.valueField = options['valueField']
         self.path = resolvePackageReferenceOrFile(options['path'])
@@ -258,8 +259,8 @@ class SubtableLoader(object):
                 if table['type'] == 'table' and table['name'] in self.tableRestricts:
                     l = []
                     for subitem in table['data']:
-                        if self.linkinField in subitem:
-                            if subitem[self.linkinField] == item[self.linkinField]:
+                        if self.linkinFieldSub in subitem:
+                            if subitem[self.linkinFieldSub] == item[self.linkinField]:
                                l.append(subitem[self.valueField])
                     if l:
                         item[self.targetField] = l
@@ -268,3 +269,46 @@ class SubtableLoader(object):
                      
                   
             yield item            
+
+
+@implementer(ISection)
+@provider(ISectionBlueprint)
+class UserCreator(object):
+    """An blueprint to create Users.
+    """
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.transmogrifier = transmogrifier
+        self.name = name
+        self.options = options
+        self.previous = previous
+        self.context = transmogrifier.context
+
+    def __iter__(self):
+        for item in self.previous:
+
+            email = item['email']
+            username = item['username']
+            
+            if not email or not username:
+                yield item
+                continue
+
+            password = item['password']
+            firstname = item['first_name'] or ''
+            lastname = item['last_name'] or ''
+            company = item['company']
+            prop = dict(fullname=firstname + ' ' + lastname, location=company,)
+            
+
+
+            try:
+                user = api.user.create(email=email, username=username, password=username, properties=prop)
+                api.user.grant_roles(username=username,  roles=['Members'])
+                transaction.commit()
+            except ValueError as ex:
+                print('"%s" cannot be created: %s' % (username, ex))
+                yield item
+                continue
+
+            yield item
