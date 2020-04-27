@@ -106,8 +106,12 @@
       component=".blueprints.SubtableLoader"
       name="ploneconf.subtable"/> 
 
- <utility
+    <utility
       component=".blueprints.UserCreator"
-      name="ploneconf.usercreator"/>  
+      name="ploneconf.usercreator"/> 
+
+    <utility
+      component=".blueprints.GrantRoles"
+      name="ploneconf.grantroles"/>       
 
 </configure>

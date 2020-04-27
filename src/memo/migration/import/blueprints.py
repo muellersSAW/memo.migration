@@ -255,6 +255,8 @@ class SubtableLoader(object):
             with open(os.path.join(self.path, "upgrade_memo.json"), "r") as read_file:
                 data = json.load(read_file)
 
+            
+
             for table in data:
                 if table['type'] == 'table' and table['name'] in self.tableRestricts:
                     l = []
@@ -299,8 +301,6 @@ class UserCreator(object):
             lastname = item['last_name'] or ''
             company = item['company']
             prop = dict(fullname=firstname + ' ' + lastname, location=company,)
-            
-
 
             try:
                 user = api.user.create(email=email, username=username, password=username, properties=prop)
@@ -312,3 +312,39 @@ class UserCreator(object):
                 continue
 
             yield item
+
+
+@implementer(ISection)
+@provider(ISectionBlueprint)
+class GrantRoles(object):
+    """An blueprint to grant admin role to Users.
+    """
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.transmogrifier = transmogrifier
+        self.name = name
+        self.options = options
+        self.previous = previous
+        self.context = transmogrifier.context
+        self.permissioncontext = options['permissioncontext']
+        self.groupids = options['groupIdsField']
+
+    def __iter__(self):
+        for item in self.previous:
+
+            username = item['username']
+            
+            if not username:
+                yield item
+                continue
+
+            container = api.content.get(path=self.permissioncontext)
+
+            for group in item[self.groupids]:
+                # import pdb; pdb.set_trace()
+                if group == 1 or group == '1':
+                    print('"%s" has group admin for: %s' % (username, self.permissioncontext))
+                    api.user.grant_roles(username=username,  roles=['Manager'], obj= container)
+                    transaction.commit()
+           
+            yield item            
