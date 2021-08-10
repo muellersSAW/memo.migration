@@ -1,5 +1,24 @@
 memo_migration_preparation
+memo_migration_locations
 memo_migration_author
 memo_migration_libs
-memo_migration_manuscript
-memo_migration_works
+
+# commentaries
+memo_migration_users_c
+memo_migration_manuscript_c
+memo_migration_works_c
+memo_migration_work_author_c
+memo_migration_works_c
+memo_migration_manuscript_work_c
+memo_migration_manuscript_work_author_c
+memo_migration_manuscript_work_c
+
+# treatises
+memo_migration_users_t
+memo_migration_manuscript_t
+memo_migration_works_t
+memo_migration_work_author_t
+memo_migration_works_t
+memo_migration_manuscript_work_t
+memo_migration_manuscript_work_author_t
+memo_migration_manuscript_work_t
