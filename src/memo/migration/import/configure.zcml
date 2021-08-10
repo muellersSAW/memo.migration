@@ -22,6 +22,15 @@
       provides="Products.GenericSetup.interfaces.EXTENSION"
       />
 
+
+<!-- both section -->
+  <transmogrifier:registerConfig
+      name="memo_migration_base"
+      title="base configuration "
+      description="This pipeline imports content into a Plone site"
+      configuration="configs/base.cfg"
+      />  
+
   <transmogrifier:registerConfig
       name="memo_migration_preparation"
       title="configuration for preparation of the memo project"
@@ -29,29 +38,18 @@
       configuration="configs/prepare.cfg"
       />
 
-  <transmogrifier:registerConfig
-      name="memo_migration_users"
-      title="configuration for adding users to the memo project"
-      description="This pipeline imports users into a Plone site"
-      configuration="configs/users.cfg"
-      />   
+ 
 
   <transmogrifier:registerConfig
-      name="memo_migration_base"
-      title="base configuration for memo"
-      description="This pipeline imports content into a Plone site"
-      configuration="configs/base.cfg"
-      />
-  <transmogrifier:registerConfig
-      name="memo_migration_manuscript"
-      title="configuration for memo manuscripts"
-      description="This pipeline imports content into a Plone site"
-      configuration="configs/manuscript.cfg"
+      name="memo_migration_locations"
+      title="configuration for locations import"
+      description=""
+      configuration="configs/locations.cfg"
       />
 
   <transmogrifier:registerConfig
       name="memo_migration_author"
-      title="configuration for memo authors"
+      title="configuration for memo persons"
       description="This pipeline imports content into a Plone site"
       configuration="configs/authors.cfg"
       />
@@ -63,29 +61,101 @@
       configuration="configs/libraries.cfg"
       />
 
+<!-- commentaries -->
   <transmogrifier:registerConfig
-      name="memo_migration_works"
+      name="memo_migration_base_c"
+      title="base configuration for commentaries section"
+      description="This pipeline imports content into a Plone site"
+      configuration="configs/commentaries/base.cfg"
+      />  
+
+  <transmogrifier:registerConfig
+      name="memo_migration_users_c"
+      title="configuration for adding users to the memo project"
+      description="This pipeline imports users into a Plone site"
+      configuration="configs/commentaries/users.cfg"
+      />  
+
+  <transmogrifier:registerConfig
+      name="memo_migration_manuscript_c"
+      title="configuration for memo manuscripts"
+      description="This pipeline imports content into a Plone site"
+      configuration="configs/commentaries/manuscript.cfg"
+      />  
+
+  <transmogrifier:registerConfig
+      name="memo_migration_works_c"
       title="configuration for memo works"
       description="This pipeline imports content into a Plone site"
-      configuration="configs/work.cfg"
+      configuration="configs/commentaries/work.cfg"
+      />
+
+  <transmogrifier:registerConfig
+      name="memo_migration_work_author_c"
+      title="linking author to works"
+      configuration="configs/commentaries/linkWorkAuthor.cfg"
+      />      
+
+  <transmogrifier:registerConfig
+      name="memo_migration_manuscript_work_c"
+      title="his pipeline imports manuscript_works"
+      configuration="configs/commentaries/manuscriptWork.cfg"
+      />      
+
+  <transmogrifier:registerConfig
+      name="memo_migration_manuscript_work_author_c"
+      title="linking authors to manuscript_work"
+      configuration="configs/commentaries/linkManuscriptWorkAuthor.cfg"
+      />     
+
+<!-- treatises -->
+  <transmogrifier:registerConfig
+      name="memo_migration_base_t"
+      title="base configuration for treatises section"
+      description="This pipeline imports content into a Plone site"
+      configuration="configs/treatises/base.cfg"
+      />
+  <transmogrifier:registerConfig
+      name="memo_migration_users_t"
+      title="configuration for adding users to the memo project"
+      description="This pipeline imports users into a Plone site"
+      configuration="configs/treatises/users.cfg"
+      />   
+  <transmogrifier:registerConfig
+      name="memo_migration_manuscript_t"
+      title="configuration for memo manuscripts"
+      description="This pipeline imports content into a Plone site"
+      configuration="configs/treatises/manuscript.cfg"
+      />  
+
+  <transmogrifier:registerConfig
+      name="memo_migration_works_t"
+      title="configuration for memo works"
+      description="This pipeline imports content into a Plone site"
+      configuration="configs/treatises/work.cfg"
       />
 
     <transmogrifier:registerConfig
-      name="memo_migration_test"
-      title="test"
-      description="This pipeline imports content into a Plone site"
-      configuration="configs/test.cfg"
-      />     
-    <transmogrifier:registerConfig
-      name="memo_migration_test2"
-      title="test"
-      description="This pipeline imports content into a Plone site"
-      configuration="configs/test2.cfg"
-      />    
+      name="memo_migration_work_author_t"
+      title="linking author to works"
+      configuration="configs/treatises/linkWorkAuthor.cfg"
+      />      
 
-    <!--<utility
-        component=".blueprints.Example"
-        name="memo.example"/>-->
+    <transmogrifier:registerConfig
+      name="memo_migration_manuscript_work_t"
+      title="his pipeline imports manuscript_works"
+      configuration="configs/treatises/manuscriptWork.cfg"
+      />      
+
+    <transmogrifier:registerConfig
+      name="memo_migration_manuscript_work_author_t"
+      title="linking authors to manuscript_work"
+      configuration="configs/treatises/linkManuscriptWorkAuthor.cfg"
+      />     
+
+   
+
+   
     <utility
       component=".blueprints.JSONSourceMemo"
       name="ploneconf.jsonsource"/>
@@ -104,7 +174,11 @@
 
     <utility
       component=".blueprints.SubtableLoader"
-      name="ploneconf.subtable"/> 
+      name="ploneconf.subtable"/>     
+
+    <utility
+      component=".blueprints.SubtableLinkLoader"
+      name="ploneconf.addlinks"/> 
 
     <utility
       component=".blueprints.UserCreator"
@@ -112,6 +186,14 @@
 
     <utility
       component=".blueprints.GrantRoles"
-      name="ploneconf.grantroles"/>       
+      name="ploneconf.grantroles"/>    
+
+    <utility
+      component=".blueprints.DatesUpdater"
+      name="ploneconf.datesupdater"/>   
+      
+    <utility
+      component=".blueprints.Mapping"
+      name="ploneconf.mapper"/>   
 
 </configure>
