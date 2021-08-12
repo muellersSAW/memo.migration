@@ -19,8 +19,7 @@ from zope.event import notify
 from zope.lifecycleevent import ObjectModifiedEvent
 from collective.relationhelpers import api as relapi
 from plone.app.uuid.utils import uuidToObject
-
-#from collective.transmogrifier.utils import Expression
+from DateTime import DateTime
 from collective.transmogrifier.utils import defaultMatcher
 from datetime import datetime
 from collective.transmogrifier.utils import traverse
@@ -28,6 +27,7 @@ from collective.transmogrifier.utils import traverse
 import transaction
 from zope.schema import URI
 import logging
+import edtf
 
 MYKEY = 'saw.memo.migration.blueprints'
 logger = logging.getLogger(MYKEY)
@@ -81,6 +81,7 @@ class JSONSourceMemo(object):
 
 
     def __iter__(self):
+        transaction.commit()
         for item in self.previous:
             yield item
 
@@ -504,3 +505,129 @@ class DatesUpdater(object):
                 ob.expiration_date = datetime.fromtimestamp(int(expirationdate))
 
             yield item
+
+
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class MergeSubTable(object):
+    """
+    """
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.transmogrifier = transmogrifier
+        self.name = name
+        self.options = options
+        self.previous = previous
+        self.context = transmogrifier.context
+        self.file = options['file'] or "upgrade_memo.json"
+        if 'tables' in options:
+            self.tableRestricts = options['tables'] 
+        else:
+            self.tableRestricts = None
+        self.linkinField = options['linkinField']
+        self.linkinFieldSub = options['linkinFieldSub'] if 'linkinFieldSub' in options else options['linkinField']
+        self.targetField = options['targetField']
+        self.valueField = options['valueField']
+        self.path = resolvePackageReferenceOrFile(options['path'])
+        if self.path is None or not os.path.isdir(self.path):
+            raise Exception('Path (' + str(self.path) + ') does not exists.')
+
+
+    def __iter__(self):
+        for item in self.previous:
+
+            if self.linkinField not in item:
+                yield item
+                continue
+
+            with open(os.path.join(self.path, self.file), "r") as read_file:
+                data = json.load(read_file)
+
+            if self.tableRestricts:
+                for table in data:
+                  if table['type'] == 'table' and table['name'] == self.tableRestricts:
+                    print(table['name'])
+                    for subitem in table['data']:
+                        if str(subitem[self.linkinFieldSub]) == str(item[self.linkinField]):
+                            item[self.targetField] = subitem[self.valueField]
+            else:
+                for subitem in data:
+                    if str(subitem[self.linkinFieldSub]) == str(item[self.linkinField]):
+                            #import pdb; pdb.set_trace()
+                            item[self.targetField] = subitem[self.valueField]
+                    
+            yield item        
+
+
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class EdtfConverter(object):
+    """
+    """
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.transmogrifier = transmogrifier
+        self.name = name
+        self.options = options
+        self.previous = previous
+        self.context = transmogrifier.context
+
+    def __iter__(self):
+        #import pdb; pdb.set_trace()
+        for item in self.previous:  
+            value_from = None 
+            value_to = None
+            if 'date_from' in item and item['date_from']:
+                try:
+                    #value_from = DateTime(item['date_from'].zfill(4)).asdatetime().date()
+                    value_from = item['date_from'].zfill(4)
+                except:
+                    value_from = None    
+            if 'date_to' in item and item['date_to'] :
+                try:
+                    #value_to = DateTime(item['date_to'].zfill(4)).asdatetime().date()
+                    value_to = item['date_to'].zfill(4)
+                except:
+                    value_to = None   
+            if value_from and value_to:         
+                calc_edtf_date = u'{0}/{1}'.format(
+                        value_from,
+                        value_to
+                        )
+                try:
+                    edtf.parse_edtf(calc_edtf_date)
+                    item['edtf_date'] = calc_edtf_date 
+                    del item['date_from']                 
+                    del item['date_to']                 
+                except:
+                    print("date value converting failed: " + calc_edtf_date)
+
+            yield item        
+
+
+
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class GeolocationConverter(object):
+    """
+    """
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.transmogrifier = transmogrifier
+        self.name = name
+        self.options = options
+        self.previous = previous
+        self.context = transmogrifier.context
+
+
+    def __iter__(self):
+
+        for item in self.previous:
+
+            if 'Longitude' in item and item['Longitude'] and 'Latitude' in item and item['Latitude']:
+                longitude = str(item['Longitude'])
+                latitude = str(item['Latitude'])
+                geolocation = dict(_class='plone.formwidget.geolocation.geolocation.Geolocation', longitude=longitude, latitude=latitude)
+                item['geolocation'] = geolocation
+            
+            yield item 
