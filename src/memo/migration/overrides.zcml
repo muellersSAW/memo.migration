@@ -3,5 +3,6 @@
   xmlns:zcml="http://namespaces.zope.org/zcml">
 
   <adapter factory=".factories.DateDeserializer" />
+  <adapter factory=".factories.DefaultDeserializer" />
 
 </configure>
