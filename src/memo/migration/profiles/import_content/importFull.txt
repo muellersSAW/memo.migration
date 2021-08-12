@@ -1,5 +1,5 @@
 memo_migration_preparation
-memo_migration_locations
+memo_migration_locations_extended
 memo_migration_author
 memo_migration_libs
 

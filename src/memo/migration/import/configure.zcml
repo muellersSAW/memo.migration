@@ -45,6 +45,13 @@
       title="configuration for locations import"
       description=""
       configuration="configs/locations.cfg"
+      />  
+
+  <transmogrifier:registerConfig
+      name="memo_migration_locations_extended"
+      title="configuration for locations import"
+      description=""
+      configuration="configs/locations_extended.cfg"
       />
 
   <transmogrifier:registerConfig
@@ -194,6 +201,18 @@
       
     <utility
       component=".blueprints.Mapping"
-      name="ploneconf.mapper"/>   
+      name="ploneconf.mapper"/> 
+
+    <utility
+      component=".blueprints.MergeSubTable"
+      name="ploneconf.mergesubtable"/>   
+
+    <utility
+      component=".blueprints.EdtfConverter"
+      name="ploneconf.edtf_converter"/>       
+
+    <utility
+      component=".blueprints.GeolocationConverter"
+      name="ploneconf.geolocation_converter"/>   
 
 </configure>
