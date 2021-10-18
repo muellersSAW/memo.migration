@@ -28,6 +28,8 @@ import transaction
 from zope.schema import URI
 import logging
 import edtf
+from zope.annotation.interfaces import IAnnotations
+from zc.relation.interfaces import ICatalog
 
 MYKEY = 'saw.memo.migration.blueprints'
 logger = logging.getLogger(MYKEY)
@@ -217,14 +219,17 @@ class ReferenceUpdater(object):
         else:
            self.sqlIdprefix = ''
         
-
+        if 'annotation_key' in options:
+            self.annotation_key = options['annotation_key']
+            self.annotation_valuefield = options['annotation_valuefield']
+        else:
+            self.annotation_key = None     
 
         self.catalog = api.portal.get_tool('portal_catalog')
         self.intids = component.getUtility(IIntIds)
 
 
     def __iter__(self):
-        #import pdb; pdb.set_trace()
         for item in self.previous:
 
             sourceId = str(item[self.source_sqlIdField])
@@ -256,6 +261,27 @@ class ReferenceUpdater(object):
 
             relapi.link_objects(
                     srcObj, referenceObj, self.referenceFieldname)
+
+            transaction.commit()
+
+            import pdb; pdb.set_trace()
+            if self.annotation_key:
+                from_id = self.intids.getId(srcObj)
+                to_id = self.intids.getId(referenceObj)
+                from_attribute = self.referenceFieldname
+                query = {
+                    'from_attribute': from_attribute,
+                    'from_id': from_id,
+                    'to_id': to_id,
+                }
+                relation_catalog = component.getUtility(ICatalog)
+                relations = relation_catalog.findRelations(query)
+                for relation in relations:
+                    print(relation.__dict__)
+                    annotations = IAnnotations(relation)
+                    annotations[self.annotation_key] = item[self.annotation_valuefield]
+
+
 
             # always end with yielding the item,
             # unless you don't want it imported, or want
