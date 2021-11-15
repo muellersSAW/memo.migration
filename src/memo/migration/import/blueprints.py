@@ -17,6 +17,7 @@ from zope.annotation import IAnnotations
 from z3c.relationfield import RelationValue
 from zope.event import notify
 from zope.lifecycleevent import ObjectModifiedEvent
+from zope.lifecycleevent import modified
 from collective.relationhelpers import api as relapi
 from plone.app.uuid.utils import uuidToObject
 from DateTime import DateTime
@@ -217,24 +218,22 @@ class ReferenceUpdater(object):
         if 'sqlIdprefix' in options:
             self.sqlIdprefix = options['sqlIdprefix']
         else:
-           self.sqlIdprefix = ''
-        
+            self.sqlIdprefix = ''
+
         if 'annotation_key' in options:
             self.annotation_key = options['annotation_key']
             self.annotation_valuefield = options['annotation_valuefield']
+            #self.annotation_value = options['annotation_value']
         else:
-            self.annotation_key = None     
+            self.annotation_key = None
 
         self.catalog = api.portal.get_tool('portal_catalog')
         self.intids = component.getUtility(IIntIds)
 
-
     def __iter__(self):
         for item in self.previous:
-
             sourceId = str(item[self.source_sqlIdField])
             referenceId = str(item[self.reference_sqlIdField])
-            
             prefixed_sourceId = self.sqlIdprefix+sourceId
 
             srcObjBrain = self.catalog.unrestrictedSearchResults(sqlid=prefixed_sourceId, portal_type=self.source_type)[:1]
@@ -245,12 +244,9 @@ class ReferenceUpdater(object):
                 continue
 
             srcObj = srcObjBrain[0].getObject()
-            
-
 
             prefixed_referenceId = self.sqlIdprefix+referenceId
             referenceObjBrain = self.catalog.unrestrictedSearchResults(sqlid=prefixed_referenceId, portal_type=self.reference_type)[:1]
-            
 
             if not referenceObjBrain:
                 logger.warning('Reference: Target {0} of type {1} not found, source is {2} of type {3}'.format(prefixed_referenceId, self.reference_type, srcObj.title, self.source_type))
@@ -259,29 +255,41 @@ class ReferenceUpdater(object):
 
             referenceObj = referenceObjBrain[0].getObject()
 
+            from_id = self.intids.getId(srcObj)
+            to_id = self.intids.getId(referenceObj)
+            from_attribute = self.referenceFieldname
+            query = {
+                'from_attribute': from_attribute,
+                'from_id': from_id,
+                'to_id': to_id,
+            }
+
+            existing_relations = getattr(srcObj, self.referenceFieldname, None)
+            if existing_relations and isinstance(existing_relations, list):
+                for relationvalue in existing_relations:
+                    print(relationvalue.__dict__)
+                for relationvalue in existing_relations:
+                    if relationvalue.to_id == to_id:
+                        existing_relations.remove(relationvalue)
+
+                setattr(srcObj, self.referenceFieldname, existing_relations)
+                modified(srcObj)
+
+            transaction.commit()
+
             relapi.link_objects(
                     srcObj, referenceObj, self.referenceFieldname)
 
             transaction.commit()
 
-            import pdb; pdb.set_trace()
             if self.annotation_key:
-                from_id = self.intids.getId(srcObj)
-                to_id = self.intids.getId(referenceObj)
-                from_attribute = self.referenceFieldname
-                query = {
-                    'from_attribute': from_attribute,
-                    'from_id': from_id,
-                    'to_id': to_id,
-                }
                 relation_catalog = component.getUtility(ICatalog)
                 relations = relation_catalog.findRelations(query)
                 for relation in relations:
                     print(relation.__dict__)
                     annotations = IAnnotations(relation)
                     annotations[self.annotation_key] = item[self.annotation_valuefield]
-
-
+                    #annotations[self.annotation_key] = self.annotation_value
 
             # always end with yielding the item,
             # unless you don't want it imported, or want
