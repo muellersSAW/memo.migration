@@ -155,11 +155,11 @@ class InitStructureSource(object):
                 dict(_type='Folder', _path='/persons', title='Persons'),
                 dict(_type='Folder', _path='/libraries', title='Libraries', description=''),
                 dict(_type='Folder', _path='/rules', title='Rules', description=''),                
-                dict(_type='Folder', _path='/treatises', title='Treatises', description=''),
+                dict(_type='project', _path='/treatises', title='Treatises', description=''),
                 dict(_type='Folder', _path='/treatises/manuscripts', title='Manuscripts'),
                 dict(_type='Folder', _path='/treatises/works', title='Works'),
                 dict(_type='Folder', _path='/treatises/manuscript_works', title='Manuscript Works'),
-                dict(_type='Folder', _path='/commentaries',title='Commentaries', description=''),
+                dict(_type='project', _path='/commentaries',title='Commentaries', description=''),
                 dict(_type='Folder', _path='/commentaries/manuscripts', title='Manuscripts'),
                 dict(_type='Folder', _path='/commentaries/works', title='Works'),
                 dict(_type='Folder', _path='/commentaries/manuscript_works', title='Manuscript Works')
