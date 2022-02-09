@@ -168,6 +168,18 @@
       name="ploneconf.jsonsource"/>
 
     <utility
+      component=".blueprints.AuthorExtender"
+      name="ploneconf.authorextender"/>
+
+    <utility
+      component=".blueprints.AuthorSkipper"
+      name="ploneconf.auth_skipper"/> 
+      
+    <utility
+      component=".blueprints.AuthorRelator"
+      name="ploneconf.authorrelator"/> 
+      
+    <utility
       component=".blueprints.ReferenceUpdater"
       name="ploneconf.referenceupdater"/> 
 
