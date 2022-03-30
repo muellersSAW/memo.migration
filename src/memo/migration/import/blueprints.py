@@ -35,6 +35,7 @@ from zc.relation.interfaces import ICatalog
 MYKEY = 'saw.memo.migration.blueprints'
 logger = logging.getLogger(MYKEY)
 
+
 @implementer(ISection)
 @provider(ISectionBlueprint)
 class Example(object):
@@ -101,6 +102,7 @@ class JSONSourceMemo(object):
         else:
             for item in data:
                 yield item          
+
 
 @provider(ISectionBlueprint)
 @implementer(ISection)
@@ -172,6 +174,7 @@ class InitStructureSource(object):
         for listitem in self.initStructure:
             yield listitem
 
+
 @provider(ISectionBlueprint)
 @implementer(ISection)
 class DictSource(object):
@@ -179,7 +182,6 @@ class DictSource(object):
     def __init__(self, transmogrifier, name, options, previous):
         self.previous = previous
         self.dictionary = options['dictionary']
-        
 
     def __iter__(self):
         for item in self.previous:
@@ -317,6 +319,12 @@ class AuthorExtender(object):
     def __iter__(self):
         #import pdb; pdb.set_trace()
         for item in self.previous:
+            item_id = str(item['identifier'])
+            mapping = list(filter(lambda x: x['OriginalId'] == item_id, self.mapping))
+            if mapping:
+                m = mapping[0]
+                item['name'] = m["Name"]
+                item['alias'] = m["alias"]
             yield item
 
         for item in self.mapping:
@@ -355,14 +363,53 @@ class AuthorSkipper(object):
                     if m['alias'] and m['splitID']:
                         print("{0} -s-> {1}: {2}".format(m['OriginalId'], m['splitID'],  m['alias']))
                     continue
-            yield item        
-                 
+            yield item 
+
 
 @provider(ISectionBlueprint)
 @implementer(ISection)
-class AuthorRelator(object):
-    """
-    """
+class LocationSkipper(object):
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.transmogrifier = transmogrifier
+        self.name = name
+        self.options = options
+        self.previous = previous
+        #self.context = transmogrifier.context
+        self.context = transmogrifier.context if transmogrifier.context else getSite()
+
+        filename = 'libs-corrected-20220328.json'
+        with open(os.path.join('memoDBJson', filename), "r") as read_file:
+            data = json.load(read_file, strict=False)
+        allUsedLocations = list(filter(lambda x: not x['mapsTo'], data))
+        self.mapping = set(map(lambda x: x['location'], allUsedLocations))
+
+    def __iter__(self):
+        #import pdb; pdb.set_trace()
+        for item in self.previous:
+            location = str(item['Name'])
+            if not location in self.mapping:
+                continue
+
+            self.mapping.remove(location)    
+            yield item
+
+        # now add the remaining items from libs-corrected to the list of location
+        for locationname in self.mapping:
+            item = { "Name": locationname,
+                    "Address": locationname,
+                    "Longitude": None,
+                    "Latitude": None,
+                    "GettyID": None }
+
+            logger.info('Added location from corrected libs: {0} '.format(locationname))        
+            yield item      
+
+
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class LibraryRelator(object):
+
 
     def __init__(self, transmogrifier, name, options, previous):
         self.transmogrifier = transmogrifier
@@ -399,34 +446,21 @@ class AuthorRelator(object):
         self.catalog = api.portal.get_tool('portal_catalog')
         self.intids = component.getUtility(IIntIds)
 
-        filename = 'persons-corrected-20220126.json'
-        #filename = 'persons.json'
+        filename = 'libs-corrected-20220328.json'
         with open(os.path.join('memoDBJson', filename), "r") as read_file:
             data = json.load(read_file)
         self.mapping = data   
 
-
     def getMappedIds(self, requested_id, mapped_ids):
-        mapping = list(filter(lambda x: x['OriginalId'] == requested_id, self.mapping))
+        mapping = list(filter(lambda x: x['identifier'] == requested_id, self.mapping))
 
         if mapping:
             # take first
             m = mapping[0]
             # requested_id is the mapped_id
-            if not m['CopyId'] and not m['splitID']:
-               mapped_ids.append(requested_id) 
-            elif m['CopyId']:
-                #map this item to this id
-                self.getMappedIds(m['CopyId'], mapped_ids)
-            else:
-                splitted = m['splitID'].split()
-                for splitted_id in splitted:
-                    self.getMappedIds(splitted_id, mapped_ids)  
-        else:
-            mapped_ids.append(requested_id)
-
-        return mapped_ids          
-
+            if m['mapsTo']:
+               return m['mapsTo']
+        return requested_id          
 
     def __iter__(self):
 
@@ -501,6 +535,148 @@ class AuthorRelator(object):
             # unless you don't want it imported, or want
             # to bail on the rest of the pipeline
             yield item
+
+
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class AuthorRelator(object):
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.transmogrifier = transmogrifier
+        self.name = name
+        self.options = options
+        self.previous = previous
+        #self.context = transmogrifier.context
+        self.context = transmogrifier.context if transmogrifier.context else getSite()
+
+        if 'path-key' in options:
+            pathkeys = options['path-key'].splitlines()
+        else:
+            pathkeys = defaultKeys(options['blueprint'], name, 'path')
+        self.pathkey = Matcher(*pathkeys)
+
+
+        self.source_type = options['source_type']
+        self.source_sqlIdField = options['source_sqlIdField']
+        self.referenceFieldname = options['referenceFieldname']
+        self.reference_type = options['reference_type']
+        self.reference_sqlIdField = options['reference_sqlIdField']
+        if 'sqlIdprefix' in options:
+            self.sqlIdprefix = options['sqlIdprefix']
+        else:
+            self.sqlIdprefix = ''
+
+        if 'annotation_key' in options:
+            self.annotation_key = options['annotation_key']
+            self.annotation_valuefield = options['annotation_valuefield']
+            #self.annotation_value = options['annotation_value']
+        else:
+            self.annotation_key = None
+
+        self.catalog = api.portal.get_tool('portal_catalog')
+        self.intids = component.getUtility(IIntIds)
+
+        filename = 'persons-corrected-20220126.json'
+        #filename = 'persons.json'
+        with open(os.path.join('memoDBJson', filename), "r") as read_file:
+            data = json.load(read_file)
+        self.mapping = data   
+
+    def getMappedIds(self, requested_id, mapped_ids):
+        mapping = list(filter(lambda x: x['OriginalId'] == requested_id, self.mapping))
+
+        if mapping:
+            # take first
+            m = mapping[0]
+            # requested_id is the mapped_id
+            if not m['CopyId'] and not m['splitID']:
+               mapped_ids.append(requested_id) 
+            elif m['CopyId']:
+                #map this item to this id
+                self.getMappedIds(m['CopyId'], mapped_ids)
+            else:
+                splitted = m['splitID'].split()
+                for splitted_id in splitted:
+                    self.getMappedIds(splitted_id, mapped_ids)  
+        else:
+            mapped_ids.append(requested_id)
+
+        return mapped_ids          
+
+    def __iter__(self):
+
+        for item in self.previous:
+            sourceId = str(item[self.source_sqlIdField])
+            referenceId = str(item[self.reference_sqlIdField])
+            prefixed_sourceId = self.sqlIdprefix+sourceId
+
+            srcObjBrain = self.catalog.unrestrictedSearchResults(sqlid=prefixed_sourceId, portal_type=self.source_type)[:1]
+            
+            if not srcObjBrain:
+                logger.warning('Reference: Source {0} of type {1} not found'.format(prefixed_sourceId, self.source_type))
+                yield item
+                continue
+
+            srcObj = srcObjBrain[0].getObject()
+
+            prefixed_referenceId = self.sqlIdprefix+referenceId
+
+            #if prefixed_referenceId == "t_3":
+                #import pdb; pdb.set_trace()
+
+            reference_Ids = self.getMappedIds(prefixed_referenceId, [])
+
+            referenceObjBrain = self.catalog.unrestrictedSearchResults(sqlid=reference_Ids, portal_type=self.reference_type)
+
+            if not referenceObjBrain:
+                logger.warning('Reference: Target {0} of type {1} not found, source is {2} of type {3}'.format(prefixed_referenceId, self.reference_type, srcObj.title, self.source_type))
+                yield item
+                continue
+
+            for brain in referenceObjBrain:    
+                referenceObj = brain.getObject()
+
+                from_id = self.intids.getId(srcObj)
+                to_id = self.intids.getId(referenceObj)
+                from_attribute = self.referenceFieldname
+                query = {
+                    'from_attribute': from_attribute,
+                    'from_id': from_id,
+                    'to_id': to_id,
+                }
+
+                existing_relations = getattr(srcObj, self.referenceFieldname, None)
+                if existing_relations and isinstance(existing_relations, list):
+                    # for relationvalue in existing_relations:
+                    #     print(relationvalue.__dict__)
+                    for relationvalue in existing_relations:
+                        if relationvalue.to_id == to_id:
+                            existing_relations.remove(relationvalue)
+
+                    setattr(srcObj, self.referenceFieldname, existing_relations)
+                    modified(srcObj)
+
+                transaction.commit()
+
+                relapi.link_objects(
+                        srcObj, referenceObj, self.referenceFieldname)
+
+                transaction.commit()
+
+                if self.annotation_key:
+                    relation_catalog = component.getUtility(ICatalog)
+                    relations = relation_catalog.findRelations(query)
+                    for relation in relations:
+                        #print(relation.__dict__)
+                        annotations = IAnnotations(relation)
+                        annotations[self.annotation_key] = item[self.annotation_valuefield]
+
+
+            # always end with yielding the item,
+            # unless you don't want it imported, or want
+            # to bail on the rest of the pipeline
+            yield item
+
 
 @provider(ISectionBlueprint)
 @implementer(ISection)
@@ -578,7 +754,6 @@ class SubtableLinkLoader(object):
         if self.path is None or not os.path.isdir(self.path):
             raise Exception('Path (' + str(self.path) + ') does not exists.')
 
-
     def __iter__(self):
 
         for item in self.previous:
@@ -619,6 +794,7 @@ class SubtableLinkLoader(object):
                      
                   
             yield item      
+
 
 @implementer(ISection)
 @provider(ISectionBlueprint)
@@ -771,7 +947,6 @@ class MergeSubTable(object):
         if self.path is None or not os.path.isdir(self.path):
             raise Exception('Path (' + str(self.path) + ') does not exists.')
 
-
     def __iter__(self):
         for item in self.previous:
 
@@ -844,7 +1019,6 @@ class EdtfConverter(object):
             yield item        
 
 
-
 @provider(ISectionBlueprint)
 @implementer(ISection)
 class GeolocationConverter(object):
@@ -857,7 +1031,6 @@ class GeolocationConverter(object):
         self.options = options
         self.previous = previous
         self.context = transmogrifier.context
-
 
     def __iter__(self):
 

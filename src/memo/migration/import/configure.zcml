@@ -65,7 +65,7 @@
       name="memo_migration_libs"
       title="configuration for memo libraries"
       description="This pipeline imports content into a Plone site"
-      configuration="configs/libraries.cfg"
+      configuration="configs/libraries-corrected.cfg"
       />
 
 <!-- commentaries -->
@@ -173,11 +173,19 @@
 
     <utility
       component=".blueprints.AuthorSkipper"
-      name="ploneconf.auth_skipper"/> 
+      name="ploneconf.auth_skipper"/>
+
+    <utility
+      component=".blueprints.LocationSkipper"
+      name="ploneconf.location_skipper"/> 
       
     <utility
       component=".blueprints.AuthorRelator"
-      name="ploneconf.authorrelator"/> 
+      name="ploneconf.authorrelator"/>  
+
+    <utility
+      component=".blueprints.LibraryRelator"
+      name="ploneconf.libraryrelator"/> 
       
     <utility
       component=".blueprints.ReferenceUpdater"
