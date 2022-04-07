@@ -66,6 +66,13 @@
       title="configuration for memo libraries"
       description="This pipeline imports content into a Plone site"
       configuration="configs/libraries-corrected.cfg"
+      />  
+
+  <transmogrifier:registerConfig
+      name="memo_migration_users"
+      title="configuration for memo users"
+      description="This pipeline imports content into a Plone site"
+      configuration="configs/users.cfg"
       />
 
 <!-- commentaries -->
@@ -218,6 +225,10 @@
     <utility
       component=".blueprints.DatesUpdater"
       name="ploneconf.datesupdater"/>   
+
+    <utility
+      component=".blueprints.UserMapper"
+      name="ploneconf.usermapper"/>   
       
     <utility
       component=".blueprints.Mapping"

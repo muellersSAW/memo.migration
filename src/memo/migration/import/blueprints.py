@@ -822,11 +822,12 @@ class UserCreator(object):
             password = item['password']
             firstname = item['first_name'] or ''
             lastname = item['last_name'] or ''
+            fullname = item['fullname'] or (firstname + ' ' + lastname)
             company = item['company']
-            prop = dict(fullname=firstname + ' ' + lastname, location=company,)
+            prop = dict(fullname=fullname, location=company,)
 
             try:
-                user = api.user.create(email=email, username=username, password=username, properties=prop)
+                user = api.user.create(email=email, username=username, password=password, properties=prop)
                 api.user.grant_roles(username=username,  roles=['Members'])
                 transaction.commit()
             except ValueError as ex:
@@ -919,6 +920,38 @@ class DatesUpdater(object):
             if expirationdate and hasattr(ob, 'expiration_date'):
                 ob.expiration_date = datetime.fromtimestamp(int(expirationdate))
 
+            yield item
+
+
+@provider(ISectionBlueprint)
+@implementer(ISection)
+class UserMapper(object):
+    """Sets creation and modification dates on objects.
+    """
+
+    def __init__(self, transmogrifier, name, options, previous):
+        self.previous = previous
+        self.context = transmogrifier.context
+        self.file = options['file'] or "upgrade_memo.json"
+        self.path = resolvePackageReferenceOrFile(options['path'])
+        if self.path is None or not os.path.isdir(self.path):
+            raise Exception('Path (' + str(self.path) + ') does not exists.')
+        with open(os.path.join(self.path, self.file), "r") as read_file:
+            data = json.load(read_file, strict=False)
+        self.mapping = data   
+
+    def __iter__(self):
+
+        #import pdb; pdb.set_trace()
+
+        for item in self.previous:
+            if 'creator' in item and item['creator']:
+                mapping = list(filter(lambda x: x['fullname'] == item['creator'], self.mapping))
+                if mapping:
+                    item['creators'] = mapping[0]['username']
+                else:
+                    item['creators'] = item['creator']
+                    
             yield item
 
 
