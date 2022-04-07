@@ -946,6 +946,10 @@ class UserMapper(object):
 
         for item in self.previous:
             if 'creator' in item and item['creator']:
+
+                if item['creator'] == "Mirco Breitenstein":
+                    item['creator'] = "Mirko Breitenstein":
+
                 mapping = list(filter(lambda x: x['fullname'] == item['creator'], self.mapping))
                 if mapping:
                     item['creators'] = mapping[0]['username']
